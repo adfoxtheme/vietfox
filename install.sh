@@ -345,7 +345,21 @@ if [[ $WITH_ENGINE -eq 1 ]] && command -v gnome-shell >/dev/null 2>&1; then
         echo "Đã cài extension sửa lỗi gõ Chrome. Sau khi đăng nhập lại, chạy: gnome-extensions enable $FORWARD_KEYS_UUID"
     fi
         ;;
-      *) ;;
+      *)
+    # GNOME 51 trở lên đã sửa lỗi chuyển phím; extension của GNOME 50 làm
+    # nhân đôi ký tự nên phải gỡ khỏi phiên đã cài từ bản trước.
+    if [[ -f "$LEGACY_FORWARD_KEYS_DIR/.vietfox-managed" ]]; then
+        set_shell_extension_enabled "$LEGACY_FORWARD_KEYS_UUID" disable ||
+            gnome-extensions disable "$LEGACY_FORWARD_KEYS_UUID" >/dev/null 2>&1 || true
+        rm -rf "$LEGACY_FORWARD_KEYS_DIR"
+    fi
+    if [[ -f "$FORWARD_KEYS_DIR/.vietfox-managed" ]]; then
+        set_shell_extension_enabled "$FORWARD_KEYS_UUID" disable ||
+            gnome-extensions disable "$FORWARD_KEYS_UUID" >/dev/null 2>&1 || true
+        rm -rf "$FORWARD_KEYS_DIR"
+        echo "Đã gỡ extension forward-keys vì GNOME $GNOME_SHELL_VERSION không cần extension này. Đăng xuất/đăng nhập để áp dụng."
+    fi
+        ;;
     esac
 fi
 

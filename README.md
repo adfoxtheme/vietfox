@@ -134,8 +134,58 @@ dpkg -s fcitx5-frontend-gtk3
 Trình cài Vietfox sẽ tự cài frontend này cùng các frontend GTK/Qt còn lại khi chạy `--with-engine`.
 
 Nếu máy báo không tìm thấy extension, chạy lại `./install.sh --with-engine` để cài các tệp của
-extension. Bản sửa này dành cho GNOME Shell 50; trên phiên GNOME khác, trước tiên xác nhận Fcitx5
-đang chạy và Vietfox được chọn làm bộ gõ.
+extension. Bản sửa này dành cho GNOME Shell 50; trên GNOME 51 trở lên không cần extension, xem
+mục dưới.
+
+### Trên GNOME 51 trở lên
+
+GNOME 51 đã sửa lỗi chuyển phím của GNOME 50, nên **không dùng extension `forward-keys`**. Trên
+GNOME 51 extension này gửi mỗi ký tự hai lần: gõ `xin chaof` ra `xiin chhaoo`. Bản cài từ phiên
+bản này không cài extension khi GNOME Shell từ 51 trở lên; máy đã cài từ bản trước thì gỡ bằng:
+
+```sh
+gnome-extensions disable forward-keys@adfoxtheme.github.io
+rm -rf ~/.local/share/gnome-shell/extensions/forward-keys@adfoxtheme.github.io
+```
+
+Chrome phải chạy Wayland native và bật IME văn bản của Wayland. Mở `chrome://gpu` và xem dòng
+**Ozone platform**: cần là `wayland`, nếu là `x11` thì Chrome đang chạy qua XWayland và không
+nhận phím từ Fcitx5. Thêm các cờ sau vào lệnh chạy Chrome:
+
+```sh
+google-chrome-stable --ozone-platform=wayland --enable-wayland-ime \
+  --wayland-text-input-version=3 --password-store=basic
+```
+
+- `--enable-wayland-ime`: bắt buộc; thiếu cờ này Chrome bỏ qua phím do bộ gõ gửi.
+- `--wayland-text-input-version=3`: dùng giao thức `text-input-v3`, giao thức Fcitx5 dùng trên GNOME.
+- `--password-store=basic`: tránh hộp thoại mở khoá login keyring chặn Chrome lúc khởi động.
+
+Để giữ cờ sau mỗi lần bấm icon, tạo bản ghi đè desktop entry cho riêng người dùng:
+
+```sh
+mkdir -p ~/.local/share/applications
+cp /usr/share/applications/google-chrome.desktop ~/.local/share/applications/
+```
+
+Sửa mọi dòng `Exec=` trong tệp vừa chép thành:
+
+```
+Exec=/usr/bin/google-chrome-stable --ozone-platform=wayland --enable-wayland-ime --wayland-text-input-version=3 --password-store=basic %U
+```
+
+rồi chạy `update-desktop-database ~/.local/share/applications`. Kiểm tra lại bằng `chrome://gpu`
+sau khi mở Chrome từ menu.
+
+Nếu đã chọn **Vietfox** trên top bar mà mở ứng dụng mới vẫn quay về **US**, đó là GNOME đặt lại
+input method của Fcitx5. Đặt lại qua D-Bus:
+
+```sh
+gdbus call --session --dest org.fcitx.Fcitx5 --object-path /controller \
+  --method org.fcitx.Fcitx.Controller1.SetCurrentIM "vietfox"
+```
+
+`fcitx5-remote -s vietfox` báo thành công nhưng không đổi input method trên fcitx5 5.1.23.
 
 ### Cách 2 — chỉ cài giao diện
 

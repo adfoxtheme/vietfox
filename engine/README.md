@@ -36,5 +36,40 @@ Script `./engine/build-ubuntu.sh` build và cập nhật artifact Vietfox cho Ub
 Không chạy lệnh install vào `/usr` trong bước build. Binary theo Ubuntu/kiến trúc nằm trong
 `variants/ubuntu/<codename>/<architecture>/`.
 
+## Build trên Arch Linux
+
+Đã build và chạy thử trên Arch Linux với Fcitx5 5.1.23, CMake 4.4 và GNOME Shell 51 (Wayland).
+Máy cần `base-devel` để có trình biên dịch, cùng các gói:
+
+```sh
+sudo pacman -S --needed base-devel cmake extra-cmake-modules fcitx5 gettext librsvg go
+```
+
+Từ gốc repo:
+
+```sh
+cmake -S engine/source -B build/engine -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=/usr/lib
+cmake --build build/engine --parallel
+sudo cmake --install build/engine
+```
+
+Arch không tách gói header như Ubuntu: gói `fcitx5` đã có `Fcitx5Core`, `Fcitx5ModuleEmoji` và
+các module addon cần thiết, nên không cần gói `-dev` riêng. `CMAKE_INSTALL_LIBDIR=/usr/lib` là
+bắt buộc vì Fcitx5 trên Arch nạp addon từ `/usr/lib/fcitx5`. Lệnh install chép:
+
+- `/usr/lib/fcitx5/libvietfox.so` và `libvietfoxmigrate.so`
+- `/usr/share/fcitx5/addon/vietfox.conf` và `vietfoxmigrate.conf`
+- `/usr/share/fcitx5/inputmethod/vietfox.conf`
+- `/usr/share/icons/hicolor/scalable/apps/fcitx-vietfox*.svg`
+- `/usr/share/locale/vi/LC_MESSAGES/fcitx5-vietfox.mo`
+
+Sau khi cài, đăng xuất rồi đăng nhập lại để Fcitx5 nạp addon, sau đó thêm bộ gõ trong
+`fcitx5-configtool`. Chọn **Vietfox** ở danh sách input method và giữ **keyboard-us** ở ô đầu
+tiên của nhóm.
+
+`./engine/build-ubuntu.sh` chỉ chạy trên Ubuntu Resolute amd64 vì nó cập nhật binary trong
+`variants/ubuntu/`; trên Arch hãy dùng các lệnh CMake ở trên.
+
 Tên `ngosen` còn trong namespace nội bộ và các đường dẫn cấu hình tương thích. Không đổi các
 đường dẫn đó nếu chưa có bước chuyển cấu hình và kiểm tra dữ liệu cũ.
